@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TuteAI - Document-Based Course Generation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #0d6efd;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #f8f9fa;
+        }
+        .document-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            background-color: white;
+        }
+        .response-container {
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .processing-indicator {
+            color: #0d6efd;
+            font-style: italic;
+        }
+        .text-small {
+            font-size: 0.85em;
+        }
+        #error-alert {
+            display: none;
+        }
+        .accordion-button:not(.collapsed) {
+            background-color: #e7f0fd;
+            color: #0d6efd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TuteAI - Document-Based Course Generator</h1>
+        
+        <div class="alert alert-danger" id="error-alert" role="alert"></div>
+        
+        <div class="row">
+            <!-- Document Upload Section -->
+            <div class="col-md-5">
+                <div class="section">
+                    <h2>Step 1: Upload Document</h2>
+                    <p>Upload a document (PDF, DOCX, or PPTX) to generate a course.</p>
+                    
+                    <form id="upload-form">
+                        <div class="mb-3">
+                            <label for="document" class="form-label">Select Document</label>
+                            <input type="file" class="form-control" id="document" accept=".pdf,.docx,.pptx" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="upload-btn">Upload Document</button>
+                    </form>
+                    
+                    <div class="mt-4">
+                        <h3>Uploaded Documents</h3>
+                        <div id="documents-list">
+                            <p class="text-muted">No documents uploaded yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Course Generation Section -->
+            <div class="col-md-7">
+                <div class="section">
+                    <h2>Step 2: Generate Course</h2>
+                    <p>Generate a complete course structure based on your uploaded document.</p>
+                    
+                    <form id="course-form" class="mb-4">
+                        <div class="mb-3">
+                            <label for="document-id" class="form-label">Select Document</label>
+                            <select class="form-control" id="document-id" required>
+                                <option value="">-- Select Document --</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="target-audience" class="form-label">Target Audience (Optional)</label>
+                            <input type="text" class="form-control" id="target-audience" placeholder="e.g., Beginners, College Students">
+                        </div>
+                        <div class="mb-3">
+                            <label for="complexity-level" class="form-label">Complexity Level (Optional)</label>
+                            <select class="form-control" id="complexity-level">
+                                <option value="">-- Select Level --</option>
+                                <option value="Beginner">Beginner</option>
+                                <option value="Intermediate">Intermediate</option>
+                                <option value="Advanced">Advanced</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="additional-context" class="form-label">Additional Instructions (Optional)</label>
+                            <textarea class="form-control" id="additional-context" rows="3" placeholder="Any specific instructions for course generation"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="generate-btn">Generate Course</button>
+                    </form>
+                    
+                    <div class="mb-3">
+                        <h3>Generated Course</h3>
+                        <div id="course-result" class="response-container">
+                            <p class="text-muted">No course generated yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Module and Lesson Generation Section -->
+        <div class="section" id="module-section" style="display: none;">
+            <h2>Step 3: Generate Module and Lesson Details</h2>
+            <p>Generate detailed content for specific modules and lessons.</p>
+            
+            <div class="accordion" id="moduleAccordion">
+                <!-- Module accordions will be added here dynamically -->
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Store generated course data
+        let currentCourseData = null;
+        
+        // Handle document upload
+        document.getElementById('upload-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('document');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showError('Please select a file to upload.');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const uploadBtn = document.getElementById('upload-btn');
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
+            
+            try {
+                const response = await fetch('/api/v1/documents/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Error uploading document');
+                }
+                
+                const data = await response.json();
+                
+                // Add uploaded document to the list
+                addDocumentToList(data.document_id, data.filename);
+                
+                // Add document to the dropdown
+                addDocumentToDropdown(data.document_id, data.filename);
+                
+                fileInput.value = '';
+                
+                showSuccess('Document uploaded successfully! Processing content...');
+            } catch (error) {
+                showError(`Upload failed: ${error.message}`);
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Upload Document';
+            }
+        });
+        
+        // Handle course generation
+        document.getElementById('course-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const documentId = document.getElementById('document-id').value;
+            const targetAudience = document.getElementById('target-audience').value;
+            const complexityLevel = document.getElementById('complexity-level').value;
+            const additionalContext = document.getElementById('additional-context').value;
+            
+            if (!documentId) {
+                showError('Please select a document.');
+                return;
+            }
+            
+            const generateBtn = document.getElementById('generate-btn');
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generating...';
+            
+            const courseResult = document.getElementById('course-result');
+            courseResult.innerHTML = '<p class="processing-indicator">Generating course content... This may take 1-2 minutes.</p>';
+            
+            try {
+                const response = await fetch('/api/v1/document-courses/generate-course', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        document_id: documentId,
+                        target_audience: targetAudience || undefined,
+                        complexity_level: complexityLevel || undefined,
+                        additional_context: additionalContext || undefined
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Error generating course');
+                }
+                
+                const data = await response.json();
+                currentCourseData = data;
+                
+                // Display generated course
+                displayCourse(data);
+                
+                // Show module section
+                document.getElementById('module-section').style.display = 'block';
+                
+                showSuccess('Course generated successfully!');
+            } catch (error) {
+                showError(`Course generation failed: ${error.message}`);
+                courseResult.innerHTML = `<p class="text-danger">Error: ${error.message}</p>`;
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate Course';
+            }
+        });
+        
+        // Helper function to add document to the list
+        function addDocumentToList(documentId, filename) {
+            const documentsList = document.getElementById('documents-list');
+            
+            // Clear "No documents" message if present
+            if (documentsList.querySelector('.text-muted')) {
+                documentsList.innerHTML = '';
+            }
+            
+            const documentItem = document.createElement('div');
+            documentItem.className = 'document-item';
+            documentItem.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${filename}</strong>
+                        <div class="text-small text-muted">ID: ${documentId}</div>
+                        <div class="processing-indicator">Processing document content...</div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary view-doc-btn" data-id="${documentId}">View</button>
+                </div>
+            `;
+            
+            documentsList.appendChild(documentItem);
+            
+            // Add event listener to view button
+            documentItem.querySelector('.view-doc-btn').addEventListener('click', async function() {
+                await fetchAndDisplayDocument(documentId);
+            });
+            
+            // Check document processing status
+            checkDocumentStatus(documentId, documentItem);
+        }
+        
+        // Helper function to add document to the dropdown
+        function addDocumentToDropdown(documentId, filename) {
+            const dropdown = document.getElementById('document-id');
+            const option = document.createElement('option');
+            option.value = documentId;
+            option.textContent = filename;
+            dropdown.appendChild(option);
+            
+            // Select the newly added document
+            dropdown.value = documentId;
+        }
+        
+        // Check document processing status
+        async function checkDocumentStatus(documentId, documentItem) {
+            const processingIndicator = documentItem.querySelector('.processing-indicator');
+            
+            try {
+                const response = await fetch(`/api/v1/documents/${documentId}`);
+                
+                if (response.ok) {
+                    processingIndicator.textContent = 'Content extracted successfully';
+                    processingIndicator.className = 'text-small text-success';
+                } else {
+                    // If 404, still processing; if 500, there was an error
+                    const errorData = await response.json();
+                    
+                    if (response.status === 500) {
+                        processingIndicator.textContent = `Error: ${errorData.detail}`;
+                        processingIndicator.className = 'text-small text-danger';
+                    } else {
+                        // Try again in 3 seconds
+                        setTimeout(() => checkDocumentStatus(documentId, documentItem), 3000);
+                    }
+                }
+            } catch (error) {
+                // Try again in 3 seconds
+                setTimeout(() => checkDocumentStatus(documentId, documentItem), 3000);
+            }
+        }
+        
+        // Fetch and display document content
+        async function fetchAndDisplayDocument(documentId) {
+            try {
+                const response = await fetch(`/api/v1/documents/${documentId}`);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Error fetching document');
+                }
+                
+                const data = await response.json();
+                
+                // Display document content in a modal
+                const modal = document.createElement('div');
+                modal.className = 'modal fade';
+                modal.id = 'documentModal';
+                modal.tabIndex = '-1';
+                modal.innerHTML = `
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">${data.metadata.title}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <h6>Document Metadata</h6>
+                                <p><strong>Author:</strong> ${data.metadata.author || 'Unknown'}</p>
+                                <p><strong>Pages/Slides:</strong> ${data.metadata.page_count || data.metadata.slide_count || 'Unknown'}</p>
+                                <hr>
+                                <h6>Document Structure</h6>
+                                <ul>
+                                    ${data.structure.slice(0, 20).map(item => `<li>${item.heading}</li>`).join('')}
+                                    ${data.structure.length > 20 ? '<li>... more items not shown</li>' : ''}
+                                </ul>
+                                <hr>
+                                <h6>Document Content Preview</h6>
+                                <div style="max-height: 300px; overflow-y: auto; white-space: pre-wrap;">${data.content.substring(0, 2000)}${data.content.length > 2000 ? '... (content truncated)' : ''}</div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                
+                const modalInstance = new bootstrap.Modal(modal);
+                modalInstance.show();
+                
+                // Clean up when the modal is hidden
+                modal.addEventListener('hidden.bs.modal', function () {
+                    document.body.removeChild(modal);
+                });
+            } catch (error) {
+                showError(`Error viewing document: ${error.message}`);
+            }
+        }
+        
+        // Display generated course
+        function displayCourse(courseData) {
+            const courseResult = document.getElementById('course-result');
+            courseResult.innerHTML = `
+                <h4>${courseData.course_title}</h4>
+                <p><strong>Description:</strong> ${courseData.course_description}</p>
+                <h5>Introduction:</h5>
+                <p>${courseData.course_introduction}</p>
+                <h5>Modules:</h5>
+                <ul>
+                    ${courseData.modules.map(module => `
+                        <li>
+                            <strong>${module.module_title}</strong>
+                            <p>${module.module_summary}</p>
+                        </li>
+                    `).join('')}
+                </ul>
+            `;
+            
+            // Create module accordions
+            createModuleAccordions(courseData);
+        }
+        
+        // Create module accordions
+        function createModuleAccordions(courseData) {
+            const moduleAccordion = document.getElementById('moduleAccordion');
+            moduleAccordion.innerHTML = '';
+            
+            courseData.modules.forEach((module, index) => {
+                const accordionItem = document.createElement('div');
+                accordionItem.className = 'accordion-item';
+                
+                accordionItem.innerHTML = `
+                    <h2 class="accordion-header" id="heading${index}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#collapse${index}" aria-expanded="false" aria-controls="collapse${index}">
+                            ${module.module_title}
+                        </button>
+                    </h2>
+                    <div id="collapse${index}" class="accordion-collapse collapse" aria-labelledby="heading${index}">
+                        <div class="accordion-body">
+                            <p>${module.module_summary}</p>
+                            <button class="btn btn-primary generate-module-btn" data-module-id="${module.module_id}">
+                                Generate Module Details
+                            </button>
+                            <div class="module-content mt-3" id="module-content-${module.module_id}"></div>
+                        </div>
+                    </div>
+                `;
+                
+                moduleAccordion.appendChild(accordionItem);
+                
+                // Add event listener for module generation
+                accordionItem.querySelector('.generate-module-btn').addEventListener('click', async function() {
+                    const moduleId = this.getAttribute('data-module-id');
+                    const contentDiv = document.getElementById(`module-content-${moduleId}`);
+                    
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generating...';
+                    contentDiv.innerHTML = '<p class="processing-indicator">Generating module content... This may take 1-2 minutes.</p>';
+                    
+                    try {
+                        const documentId = document.getElementById('document-id').value;
+                        const response = await fetch('/api/v1/document-courses/generate-module', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                document_id: documentId,
+                                course_info: currentCourseData,
+                                module_id: moduleId
+                            })
+                        });
+                        
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.detail || 'Error generating module');
+                        }
+                        
+                        const moduleData = await response.json();
+                        displayModuleContent(moduleData, contentDiv);
+                    } catch (error) {
+                        contentDiv.innerHTML = `<p class="text-danger">Error: ${error.message}</p>`;
+                    } finally {
+                        this.disabled = false;
+                        this.textContent = 'Generate Module Details';
+                    }
+                });
+            });
+        }
+        
+        // Display module content
+        function displayModuleContent(moduleData, container) {
+            container.innerHTML = `
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h5>${moduleData.module_title}</h5>
+                        <p>${moduleData.module_description}</p>
+                        <h6>Learning Objectives:</h6>
+                        <ul>
+                            ${moduleData.learning_objectives.map(obj => `<li>${obj}</li>`).join('')}
+                        </ul>
+                        <p><strong>Estimated Time:</strong> ${moduleData.estimated_time}</p>
+                        <h6>Lessons:</h6>
+                        <div class="list-group">
+                            ${moduleData.lessons.map(lesson => `
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">${lesson.lesson_title}</h6>
+                                        <button class="btn btn-sm btn-outline-primary generate-lesson-btn" 
+                                                data-lesson-id="${lesson.lesson_id}"
+                                                data-module-id="${moduleData.module_id}">
+                                            Generate Lesson
+                                        </button>
+                                    </div>
+                                    <p class="mb-1">${lesson.lesson_summary}</p>
+                                    <div class="lesson-content mt-2" id="lesson-content-${lesson.lesson_id}"></div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add event listeners for lesson generation
+            container.querySelectorAll('.generate-lesson-btn').forEach(button => {
+                button.addEventListener('click', async function() {
+                    const lessonId = this.getAttribute('data-lesson-id');
+                    const moduleId = this.getAttribute('data-module-id');
+                    const contentDiv = document.getElementById(`lesson-content-${lessonId}`);
+                    
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generating...';
+                    contentDiv.innerHTML = '<p class="processing-indicator">Generating lesson content... This may take 1-2 minutes.</p>';
+                    
+                    try {
+                        const documentId = document.getElementById('document-id').value;
+                        
+                        // Find the module data
+                        const moduleInfo = {
+                            module_id: moduleId,
+                            module_title: moduleData.module_title,
+                            lessons: moduleData.lessons
+                        };
+                        
+                        const response = await fetch('/api/v1/document-courses/generate-lesson', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                document_id: documentId,
+                                module_info: moduleInfo,
+                                lesson_id: lessonId
+                            })
+                        });
+                        
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.detail || 'Error generating lesson');
+                        }
+                        
+                        const lessonData = await response.json();
+                        displayLessonContent(lessonData, contentDiv);
+                    } catch (error) {
+                        contentDiv.innerHTML = `<p class="text-danger">Error: ${error.message}</p>`;
+                    } finally {
+                        this.disabled = false;
+                        this.textContent = 'Generate Lesson';
+                    }
+                });
+            });
+        }
+        
+        // Display lesson content
+        function displayLessonContent(lessonData, container) {
+            container.innerHTML = `
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h5>${lessonData.lesson_title}</h5>
+                        <h6>Learning Objectives:</h6>
+                        <ul>
+                            ${lessonData.learning_objectives.map(obj => `<li>${obj}</li>`).join('')}
+                        </ul>
+                        <hr>
+                        <h6>Introduction:</h6>
+                        <p>${lessonData.content.introduction}</p>
+                        <h6>Content:</h6>
+                        <div style="white-space: pre-wrap;">${lessonData.content.main_content}</div>
+                        <h6>Examples:</h6>
+                        <div>${lessonData.content.examples}</div>
+                        <h6>Summary:</h6>
+                        <p>${lessonData.content.summary}</p>
+                        <hr>
+                        <h6>Quiz:</h6>
+                        <div class="quiz-container">
+                            ${lessonData.quiz.map((question, qIndex) => `
+                                <div class="card mb-3">
+                                    <div class="card-header">Question ${qIndex + 1}</div>
+                                    <div class="card-body">
+                                        <p><strong>${question.question}</strong></p>
+                                        <div class="options-list">
+                                            ${question.options.map((option, oIndex) => `
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="question${qIndex}" id="q${qIndex}o${oIndex}">
+                                                    <label class="form-check-label" for="q${qIndex}o${oIndex}">
+                                                        ${option}
+                                                    </label>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                        <div class="mt-2">
+                                            <button class="btn btn-sm btn-outline-primary show-answer-btn" data-bs-toggle="collapse" data-bs-target="#answer${qIndex}">
+                                                Show Answer
+                                            </button>
+                                            <div class="collapse mt-2" id="answer${qIndex}">
+                                                <div class="card card-body bg-light">
+                                                    <p><strong>Correct Answer:</strong> ${question.correct_answer}</p>
+                                                    <p><strong>Explanation:</strong> ${question.explanation}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                            <button class="btn btn-primary generate-quiz-btn" data-lesson-id="${lessonData.lesson_id}">
+                                Generate More Questions
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add event listener for additional quiz generation
+            container.querySelector('.generate-quiz-btn').addEventListener('click', async function() {
+                const lessonId = this.getAttribute('data-lesson-id');
+                const quizContainer = this.parentNode;
+                
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generating...';
+                
+                try {
+                    const documentId = document.getElementById('document-id').value;
+                    
+                    const response = await fetch('/api/v1/document-courses/generate-quiz', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            document_id: documentId,
+                            lesson_info: lessonData,
+                            question_count: 5
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || 'Error generating additional quiz');
+                    }
+                    
+                    const quizData = await response.json();
+                    
+                    // Insert new questions before the button
+                    const quizHtml = quizData.map((question, qIndex) => {
+                        const startIndex = lessonData.quiz.length;
+                        return `
+                            <div class="card mb-3">
+                                <div class="card-header">Additional Question ${qIndex + 1}</div>
+                                <div class="card-body">
+                                    <p><strong>${question.question}</strong></p>
+                                    <div class="options-list">
+                                        ${question.options.map((option, oIndex) => `
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="question${startIndex + qIndex}" id="q${startIndex + qIndex}o${oIndex}">
+                                                <label class="form-check-label" for="q${startIndex + qIndex}o${oIndex}">
+                                                    ${option}
+                                                </label>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                    <div class="mt-2">
+                                        <button class="btn btn-sm btn-outline-primary show-answer-btn" data-bs-toggle="collapse" data-bs-target="#answer${startIndex + qIndex}">
+                                            Show Answer
+                                        </button>
+                                        <div class="collapse mt-2" id="answer${startIndex + qIndex}">
+                                            <div class="card card-body bg-light">
+                                                <p><strong>Correct Answer:</strong> ${question.correct_answer}</p>
+                                                <p><strong>Explanation:</strong> ${question.explanation}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    // Insert new questions before the button
+                    this.insertAdjacentHTML('beforebegin', quizHtml);
+                    
+                    // Add the new questions to the lessonData
+                    lessonData.quiz = [...lessonData.quiz, ...quizData];
+                    
+                } catch (error) {
+                    showError(`Error generating additional quiz: ${error.message}`);
+                } finally {
+                    this.disabled = false;
+                    this.textContent = 'Generate More Questions';
+                }
+            });
+        }
+        
+        // Show error message
+        function showError(message) {
+            const alert = document.getElementById('error-alert');
+            alert.textContent = message;
+            alert.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Show success message
+        function showSuccess(message) {
+            const alert = document.getElementById('error-alert');
+            alert.textContent = message;
+            alert.className = 'alert alert-success';
+            alert.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                alert.style.display = 'none';
+                alert.className = 'alert alert-danger';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

@@ -10,8 +10,12 @@ class ModuleRequest(BaseModel):
 class LessonInfo(BaseModel):
     lesson_id: str
     lesson_title: str
-    lesson_objective: str
+    lesson_summary: str  # Changed from lesson_objective to match usage in document_ai_service.py
 
 class ModuleResponse(BaseModel):
-    module_introduction: str
+    module_id: str  # Added missing field
+    module_title: str  # Added missing field
+    module_description: str  # Added missing field
+    learning_objectives: List[str]  # Added missing field
+    estimated_time: str  # Added missing field 
     lessons: List[LessonInfo]

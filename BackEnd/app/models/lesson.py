@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Dict, Optional
 
 class LessonRequest(BaseModel):
     course_title: str
@@ -8,7 +8,12 @@ class LessonRequest(BaseModel):
     lesson_objective: str
 
 class LessonResponse(BaseModel):
-    lesson_content: str
+    lesson_id: Optional[str] = None
+    lesson_title: Optional[str] = None
+    learning_objectives: Optional[List[str]] = None
+    content: Optional[Dict[str, str]] = None
+    quiz: Optional[List['QuizQuestion']] = None
+    lesson_content: Optional[str] = None  # Keep backward compatibility
 
 class QuizQuestion(BaseModel):
     question: str

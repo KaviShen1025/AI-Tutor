@@ -36,7 +36,9 @@ async def create_lesson_content(request: LessonRequest):
         
         # Create a LessonResponse object
         lesson_response = LessonResponse(
-            lesson_content=lesson_content
+            lesson_content=lesson_content,
+            # The legacy endpoint just uses the flat content field
+            # Other fields will remain optional/None
         )
 
         return lesson_response

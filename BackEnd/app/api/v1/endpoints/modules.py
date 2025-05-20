@@ -24,7 +24,7 @@ async def plan_module(request: ModuleRequest):
     
     For each lesson provide:
     - A clear title
-    - A specific learning objective that contributes to the module's purpose within the course
+    - A brief summary (1-2 sentences) that describes what the lesson covers
     
     Format the response as a JSON object with the following structure:
     {{
@@ -32,7 +32,7 @@ async def plan_module(request: ModuleRequest):
       "lessons": [
         {{
           "lesson_title": "...",
-          "lesson_objective": "..."
+          "lesson_summary": "..."
         }}
       ]
     }}
@@ -47,11 +47,16 @@ async def plan_module(request: ModuleRequest):
             lesson_with_id = LessonInfo(
                 lesson_id=generate_id("les"),
                 lesson_title=lesson["lesson_title"],
-                lesson_objective=lesson["lesson_objective"]
+                lesson_summary=lesson.get("lesson_summary", "")  # Use the field as named in the prompt
             )
             lessons_with_ids.append(lesson_with_id)
         
         module_response = ModuleResponse(
+            module_id=generate_id("mod"),  # Generate a new module ID
+            module_title=request.module_title,
+            module_description=request.module_summary,
+            learning_objectives=["Understand and apply concepts covered in this module"],  # Default objective
+            estimated_time="2-3 hours",  # Default time estimate
             module_introduction=module_json["module_introduction"],
             lessons=lessons_with_ids
         )
