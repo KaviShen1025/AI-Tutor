@@ -9,6 +9,12 @@ httpx
 python-multipart
 jinja2
 tenacity
+# Document processing
+PyPDF2
+python-docx
+python-pptx
+aiofiles
+aiofiles
 # =====================
 flask
 langchain-google-genai
