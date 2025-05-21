@@ -117,29 +117,71 @@ Once the server is running, you can access the interactive API documentation at:
 
 ### Core Endpoints
 
-#### Course Planning
+#### API Health Check
 ```
-POST /api/v1/plan-course
+GET http://localhost:8000/api/v2/health
 ```
-Create a structured course outline with modules.
+Check the health status of the API.
 
-#### Module Planning
+#### Document Upload
 ```
-POST /api/v1/plan-module
+POST http://localhost:8000/api/v1/documents/upload
 ```
-Generate detailed module structure with lessons.
+Upload a document (PDF, DOCX, or PPTX) to generate a course.
 
-#### Lesson Content
+#### Get Document
 ```
-POST /api/v1/create-lesson-content
+GET http://localhost:8000/api/v1/documents/{documentId}
 ```
-Create comprehensive lesson content.
+Get document details by ID.
 
-#### Quiz Generation
+#### Course Planning (v1)
 ```
-POST /api/v1/create-quiz
+POST http://localhost:8000/api/v1/document-courses/generate-course
+```
+Generate a complete course structure based on an uploaded document.
+
+#### Module Planning (v1)
+```
+POST http://localhost:8000/api/v1/document-courses/generate-module
+```
+Generate detailed module structure with lessons for a specific course.
+
+#### Lesson Content (v1)
+```
+POST http://localhost:8000/api/v1/document-courses/generate-lesson
+```
+Create comprehensive lesson content for a specific module.
+
+#### Quiz Generation (v1)
+```
+POST http://localhost:8000/api/v1/document-courses/generate-quiz
 ```
 Generate assessment questions for a lesson.
+
+#### Course Planning (v2)
+```
+POST http://localhost:8000/api/v2/courses
+```
+Generate a course plan using the v2 API.
+
+#### Module Planning (v2)
+```
+POST http://localhost:8000/api/v2/modules
+```
+Generate a module plan using the v2 API.
+
+#### Lesson Content (v2)
+```
+POST http://localhost:8000/api/v2/lessons
+```
+Generate lesson content using the v2 API.
+
+#### Quiz Generation (v2)
+```
+POST http://localhost:8000/api/v2/quizzes
+```
+Generate a quiz using the v2 API.
 
 ## 🧠 AI Integration
 
