@@ -112,8 +112,19 @@ The API will be available at http://localhost:8000
 ## 📚 API Documentation
 
 Once the server is running, you can access the interactive API documentation at:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+- **ReDoc**: http://localhost:8000/redoc
+  - Clean, responsive, and searchable documentation
+  - Three-panel layout for better navigation
+  - Detailed schema information and endpoint descriptions
+  - More readable for complex APIs with deep object hierarchies
+
+- **Swagger UI**: http://localhost:8000/docs
+  - Interactive documentation with a user-friendly interface
+  - Test API endpoints directly from the browser
+  - Visualize request/response structures and data models
+  - Explore available parameters and authentication requirements
+
+Both interfaces provide comprehensive documentation of all available endpoints, request parameters, response formats, and data models. They are automatically generated from the OpenAPI specification and stay in sync with your API's implementation.
 
 ### Core Endpoints
 
