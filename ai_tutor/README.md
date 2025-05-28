@@ -1,7 +1,20 @@
-# ai_tutor
+# AI Tutor
 
-A new Flutter project.
-.
+An AI-powered Flutter app for creating and managing educational content.
+
+## Features
+
+- Generate course content based on user-defined topics
+- Create detailed course modules with lessons
+- Interactive learning experience
+- Customizable content generation
+
+## API Endpoints
+
+The app integrates with the following API endpoints:
+
+1. `/api/v1/plan-course` - Generate a complete course structure
+2. `/api/v1/plan-module` - Generate detailed content for a specific module
 
 ## Getting Started
 

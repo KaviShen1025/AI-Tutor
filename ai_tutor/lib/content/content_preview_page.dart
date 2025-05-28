@@ -1,14 +1,65 @@
 import 'package:flutter/material.dart';
 import 'package:ai_tutor/models/course_models.dart';
+import 'package:ai_tutor/models/module_models.dart';
+import 'package:ai_tutor/services/api_service.dart';
 import '../widgets/app_header.dart';
 import '../widgets/bottom_nav_bar.dart';
 import 'content_page.dart';
 import '../widgets/animated_background.dart';
 
-class ContentPreviewPage extends StatelessWidget {
+class ContentPreviewPage extends StatefulWidget {
   final CourseResponse courseData;
 
   const ContentPreviewPage({super.key, required this.courseData});
+
+  @override
+  State<ContentPreviewPage> createState() => _ContentPreviewPageState();
+}
+
+class _ContentPreviewPageState extends State<ContentPreviewPage> {
+  final ApiService _apiService = ApiService();
+  Map<String, bool> _loadingModules = {};
+  Map<String, ModuleResponse?> _planedModules = {};
+
+  Future<void> _planModule(ModuleInfo module) async {
+    if (_loadingModules[module.moduleTitle] == true) return;
+
+    setState(() {
+      _loadingModules[module.moduleTitle] = true;
+    });
+
+    try {
+      final moduleRequest = ModuleRequest(
+        courseTitle: widget.courseData.courseTitle,
+        courseDescription: widget.courseData.courseDescription,
+        moduleTitle: module.moduleTitle,
+        moduleSummary: module.moduleSummary,
+      );
+
+      final moduleResponse = await _apiService.planModule(moduleRequest);
+
+      setState(() {
+        _planedModules[module.moduleTitle] = moduleResponse;
+        _loadingModules[module.moduleTitle] = false;
+      });
+
+      // Navigate to content page with the detailed module
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ContentPage(moduleData: moduleResponse),
+        ),
+      );
+    } catch (e) {
+      setState(() {
+        _loadingModules[module.moduleTitle] = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to plan module: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +160,7 @@ class ContentPreviewPage extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    courseData.courseTitle,
+                                    widget.courseData.courseTitle,
                                     style: const TextStyle(
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
@@ -158,7 +209,7 @@ class ContentPreviewPage extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    courseData.courseDescription,
+                                    widget.courseData.courseDescription,
                                     style: TextStyle(
                                       color: Colors.grey[600],
                                       height: 1.5,
@@ -179,7 +230,8 @@ class ContentPreviewPage extends StatelessWidget {
                                   // ),
                                   const SizedBox(height: 24),
                                   // Course Introduction
-                                  if (courseData.courseIntroduction.isNotEmpty) ...[
+                                  if (widget.courseData.courseIntroduction
+                                      .isNotEmpty) ...[
                                     const Text(
                                       'Introduction',
                                       style: TextStyle(
@@ -189,7 +241,7 @@ class ContentPreviewPage extends StatelessWidget {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      courseData.courseIntroduction,
+                                      widget.courseData.courseIntroduction,
                                       style: TextStyle(
                                         color: Colors.grey[600],
                                         height: 1.5,
@@ -205,15 +257,22 @@ class ContentPreviewPage extends StatelessWidget {
                                     ),
                                   ),
                                   const SizedBox(height: 16),
-                                  // Icons Grid
+                                  // Icons Grid with module planning integration
                                   Center(
                                     child: Wrap(
                                       spacing: 16,
                                       runSpacing: 16,
-                                      children: courseData.modules.map((module) {
-                                        return _buildContentIcon(
-                                          Icons.article_outlined, // Default icon for all modules
-                                          module.moduleTitle,
+                                      children: widget.courseData.modules
+                                          .map((module) {
+                                        return GestureDetector(
+                                          onTap: () => _planModule(module),
+                                          child: _buildContentIcon(
+                                            Icons.article_outlined,
+                                            module.moduleTitle,
+                                            isLoading: _loadingModules[
+                                                    module.moduleTitle] ??
+                                                false,
+                                          ),
                                         );
                                       }).toList(),
                                     ),
@@ -251,25 +310,30 @@ class ContentPreviewPage extends StatelessWidget {
                                       Expanded(
                                         child: ElevatedButton(
                                           onPressed: () {
-                                              // TODO: Decide what "Continue" does.
-                                              // For now, it might navigate to the first module,
-                                              // or this button could be context-dependent.
-                                              // If courseData.modules is not empty, navigate to ContentPage with first module's data
-                                              if (courseData.modules.isNotEmpty) {
-                                                // Placeholder: For now, ContentPage may not be ready to accept specific module data.
-                                                // This navigation might need to be updated in a future task.
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        const ContentPage(/* moduleData: courseData.modules.first */),
-                                                  ),
-                                                );
-                                              } else {
-                                                 ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(content: Text('No modules available to continue.')),
-                                                );
-                                              }
+                                            // TODO: Decide what "Continue" does.
+                                            // For now, it might navigate to the first module,
+                                            // or this button could be context-dependent.
+                                            // If courseData.modules is not empty, navigate to ContentPage with first module's data
+                                            if (widget.courseData.modules
+                                                .isNotEmpty) {
+                                              // Placeholder: For now, ContentPage may not be ready to accept specific module data.
+                                              // This navigation might need to be updated in a future task.
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      const ContentPage(
+                                                          /* moduleData: courseData.modules.first */),
+                                                ),
+                                              );
+                                            } else {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                    content: Text(
+                                                        'No modules available to continue.')),
+                                              );
+                                            }
                                           },
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: Colors.blue,
@@ -314,7 +378,8 @@ class ContentPreviewPage extends StatelessWidget {
     );
   }
 
-  Widget _buildContentIcon(IconData icon, String label) {
+  Widget _buildContentIcon(IconData icon, String label,
+      {bool isLoading = false}) {
     return Container(
       width: 100,
       height: 90,
@@ -341,11 +406,21 @@ class ContentPreviewPage extends StatelessWidget {
                 ),
               ],
             ),
-            child: Icon(
-              icon,
-              size: 24,
-              color: Colors.grey[700],
-            ),
+            child: isLoading
+                ? SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Colors.blue[700]!),
+                    ),
+                  )
+                : Icon(
+                    icon,
+                    size: 24,
+                    color: Colors.grey[700],
+                  ),
           ),
           const SizedBox(height: 8),
           Text(
