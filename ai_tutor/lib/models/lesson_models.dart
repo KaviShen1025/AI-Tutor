@@ -21,29 +21,6 @@ class LessonContentRequest {
   }
 }
 
-class QuizQuestion {
-  final String question;
-  final List<String> options;
-  final int correctOptionIndex;
-  final String? explanation;
-
-  QuizQuestion({
-    required this.question,
-    required this.options,
-    required this.correctOptionIndex,
-    this.explanation,
-  });
-
-  factory QuizQuestion.fromJson(Map<String, dynamic> json) {
-    return QuizQuestion(
-      question: json['question'] ?? 'Question not available',
-      options: List<String>.from(json['options'] ?? []),
-      correctOptionIndex: json['correct_option_index'] ?? 0,
-      explanation: json['explanation'],
-    );
-  }
-}
-
 class LessonContentResponse {
   final String? lessonId;
   final String lessonTitle;
@@ -114,32 +91,61 @@ class QuizRequest {
   }
 }
 
-// Add new class for quiz responses
 class QuizResponse {
   final List<QuizQuestion> quiz;
 
-  QuizResponse({
-    required this.quiz,
-  });
+  QuizResponse({required this.quiz});
 
   factory QuizResponse.fromJson(Map<String, dynamic> json) {
-    List<QuizQuestion> quizQuestions = [];
-    if (json['quiz'] != null && json['quiz'] is List) {
-      quizQuestions = (json['quiz'] as List).map((questionJson) {
-        final options = List<String>.from(questionJson['options'] ?? []);
-        final correctAnswer = questionJson['correct_answer'] as String;
-        // Find the index of the correct answer in the options list
-        final correctOptionIndex = options.indexOf(correctAnswer);
+    List<QuizQuestion> questions = [];
+    if (json['quiz'] != null) {
+      questions = (json['quiz'] as List)
+          .map((question) => QuizQuestion.fromJson(question))
+          .toList();
+    }
+    return QuizResponse(quiz: questions);
+  }
+}
 
-        return QuizQuestion(
-          question: questionJson['question'] ?? 'Question not available',
-          options: options,
-          correctOptionIndex: correctOptionIndex >= 0 ? correctOptionIndex : 0,
-          explanation: questionJson['explanation'],
-        );
-      }).toList();
+class QuizQuestion {
+  final String question;
+  final List<String> options;
+  final int correctOptionIndex;
+  final String correctAnswer;
+  final String explanation;
+
+  QuizQuestion({
+    required this.question,
+    required this.options,
+    required this.correctAnswer,
+    required this.correctOptionIndex,
+    required this.explanation,
+  });
+
+  factory QuizQuestion.fromJson(Map<String, dynamic> json) {
+    // Handle parsing the correct option index
+    int index;
+    if (json['correct_option_index'] != null) {
+      if (json['correct_option_index'] is int) {
+        index = json['correct_option_index'];
+      } else {
+        // Try to parse as integer if it's a string
+        index = int.tryParse(json['correct_option_index'].toString()) ?? 0;
+      }
+    } else {
+      // If no index provided, try to find the correct answer in options
+      final options = List<String>.from(json['options'] ?? []);
+      final correctAnswer = json['correct_answer'] ?? '';
+      index = options.indexOf(correctAnswer);
+      if (index == -1) index = 0; // Default to first option if not found
     }
 
-    return QuizResponse(quiz: quizQuestions);
+    return QuizQuestion(
+      question: json['question'] ?? '',
+      options: List<String>.from(json['options'] ?? []),
+      correctAnswer: json['correct_answer'] ?? '',
+      correctOptionIndex: index,
+      explanation: json['explanation'] ?? '',
+    );
   }
 }

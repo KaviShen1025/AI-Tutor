@@ -18,9 +18,8 @@ class ResultPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double percentage = totalQuestions > 0
-        ? (score / totalQuestions) * 100
-        : 0;
+    final double percentage =
+        totalQuestions > 0 ? (score / totalQuestions) * 100 : 0;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -179,7 +178,8 @@ class ResultPage extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue.shade50,
                 foregroundColor: Colors.blue.shade700,
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -281,7 +281,8 @@ class StarsPainter extends CustomPainter {
 
       // Draw line from center to star
       canvas.drawLine(
-        Offset(center.dx + innerRadius * math.cos(angle), center.dy + innerRadius * math.sin(angle)),
+        Offset(center.dx + innerRadius * math.cos(angle),
+            center.dy + innerRadius * math.sin(angle)),
         Offset(starX, starY),
         Paint()
           ..color = const Color(0xFFFFC107)

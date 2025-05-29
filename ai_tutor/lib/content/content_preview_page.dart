@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:ai_tutor/models/course_models.dart';
 import 'package:ai_tutor/models/module_models.dart';
 import 'package:ai_tutor/services/api_service.dart';
+import 'content_page.dart';
 import '../widgets/app_header.dart';
 import '../widgets/bottom_nav_bar.dart';
-import 'content_page.dart';
 import '../widgets/animated_background.dart';
 
 class ContentPreviewPage extends StatefulWidget {
@@ -47,7 +47,10 @@ class _ContentPreviewPageState extends State<ContentPreviewPage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => ContentPage(moduleData: moduleResponse),
+          builder: (context) => ContentPage(
+            moduleData: moduleResponse,
+            courseTitle: widget.courseData.courseTitle,
+          ),
         ),
       );
     } catch (e) {
@@ -322,7 +325,8 @@ class _ContentPreviewPageState extends State<ContentPreviewPage> {
                                                 context,
                                                 MaterialPageRoute(
                                                   builder: (context) =>
-                                                      const ContentPage(
+                                                      ContentPage(
+                                                          courseTitle: widget.courseData.courseTitle,
                                                           /* moduleData: courseData.modules.first */),
                                                 ),
                                               );

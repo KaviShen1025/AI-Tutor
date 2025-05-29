@@ -51,19 +51,19 @@ class _QuizPageState extends State<QuizPage> {
       } else {
         // Otherwise, create some dummy questions for testing
         // In a real app, you would fetch these from your API
-        setState(() {
-          _questions = [
-            QuizQuestion(
-              question: "What is the main focus of this section?",
-              options: ["Option 1", "Option 2", "Option 3", "Option 4"],
-              correctOptionIndex: 0,
-              explanation: "This is the explanation for the correct answer.",
-            ),
-            // Add more dummy questions
-          ];
-          _selectedAnswers = List.filled(_questions.length, -1);
-          _loading = false;
-        });
+        // setState(() {
+        //   _questions = [
+        //     QuizQuestion(
+        //       question: "What is the main focus of this section?",
+        //       options: ["Option 1", "Option 2", "Option 3", "Option 4"],
+        //       correctOptionIndex: 0,
+        //       explanation: "This is the explanation for the correct answer.",
+        //     ),
+        //     // Add more dummy questions
+        //   ];
+        //   _selectedAnswers = List.filled(_questions.length, -1);
+        //   _loading = false;
+        // });
       }
     } catch (e) {
       setState(() {

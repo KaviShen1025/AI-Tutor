@@ -123,11 +123,9 @@ class ApiService {
   }
 
   Future<QuizResponse> createQuiz(QuizRequest request) async {
-    final url = Uri.parse('$_baseUrl/create-quiz');
-
     try {
       final response = await http.post(
-        url,
+        Uri.parse('$_baseUrl/create-quiz'),
         headers: {
           'Content-Type': 'application/json; charset=UTF-8',
         },

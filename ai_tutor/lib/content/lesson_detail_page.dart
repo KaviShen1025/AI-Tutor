@@ -10,10 +10,16 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 
 class LessonDetailPage extends StatelessWidget {
   final LessonContentResponse lessonData;
+  final String courseTitle;
+  final String moduleTitle;
   final ApiService _apiService = ApiService();
 
-  LessonDetailPage({Key? key, required this.lessonData})
-      : super(key: key);
+  LessonDetailPage({
+    Key? key,
+    required this.lessonData,
+    required this.courseTitle,
+    required this.moduleTitle,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -235,22 +241,31 @@ class LessonDetailPage extends StatelessWidget {
                             Expanded(
                               child: ElevatedButton.icon(
                                 onPressed: () async {
-                                  // Show loading indicator
-                                  final scaffoldMessenger =
-                                      ScaffoldMessenger.of(context);
-
-                                  scaffoldMessenger.showSnackBar(
-                                    const SnackBar(
-                                      content:
-                                          Text('Generating quiz questions...'),
-                                      duration: Duration(seconds: 2),
-                                    ),
+                                  // Show loading dialog instead of snackbar for better UX
+                                  showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (BuildContext context) {
+                                      return const AlertDialog(
+                                        content: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            CircularProgressIndicator(),
+                                            SizedBox(height: 16),
+                                            Text('Generating quiz questions...')
+                                          ],
+                                        ),
+                                      );
+                                    },
                                   );
 
                                   try {
                                     // If we already have quiz questions, use them
                                     if (lessonData.quizQuestions != null &&
                                         lessonData.quizQuestions!.isNotEmpty) {
+                                      // Hide the dialog before navigating
+                                      Navigator.pop(context);
+
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
@@ -264,10 +279,8 @@ class LessonDetailPage extends StatelessWidget {
                                     } else {
                                       // Otherwise, generate new quiz questions from API
                                       final quizRequest = QuizRequest(
-                                        courseTitle:
-                                            "Current Course", // This should ideally be passed from previous screens
-                                        moduleTitle:
-                                            "Current Module", // This should ideally be passed from previous screens
+                                        courseTitle: courseTitle,
+                                        moduleTitle: moduleTitle,
                                         lessonTitle: lessonData.lessonTitle,
                                         lessonObjective: lessonData
                                                 .lessonIntroduction ??
@@ -277,23 +290,45 @@ class LessonDetailPage extends StatelessWidget {
                                       final quizResponse = await _apiService
                                           .createQuiz(quizRequest);
 
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => QuizPage(
-                                            section: lessonData.lessonTitle,
-                                            quizQuestions: quizResponse.quiz,
+                                      // Hide the dialog before navigating
+                                      Navigator.pop(context);
+
+                                      if (quizResponse.quiz.isEmpty) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                                'No quiz questions were generated. Please try again.'),
+                                            duration: Duration(seconds: 5),
                                           ),
-                                        ),
-                                      );
+                                        );
+                                      } else {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => QuizPage(
+                                              section: lessonData.lessonTitle,
+                                              quizQuestions: quizResponse.quiz,
+                                            ),
+                                          ),
+                                        );
+                                      }
                                     }
                                   } catch (e) {
-                                    scaffoldMessenger.hideCurrentSnackBar();
-                                    scaffoldMessenger.showSnackBar(
+                                    // Always pop the dialog if there's an error
+                                    Navigator.pop(context);
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content:
-                                            Text('Failed to generate quiz: $e'),
+                                        content: Text(
+                                            'Failed to generate quiz: ${e.toString()}'),
                                         duration: const Duration(seconds: 5),
+                                        action: SnackBarAction(
+                                          label: 'Try Again',
+                                          onPressed: () {
+                                            // Retry the quiz generation
+                                          },
+                                        ),
                                       ),
                                     );
                                   }

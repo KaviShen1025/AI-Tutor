@@ -9,8 +9,13 @@ import 'lesson_detail_page.dart';
 
 class ContentPage extends StatefulWidget {
   final ModuleResponse? moduleData;
+  final String courseTitle;
 
-  const ContentPage({super.key, this.moduleData});
+  const ContentPage({
+    super.key,
+    this.moduleData,
+    required this.courseTitle,
+  });
 
   @override
   State<ContentPage> createState() => _ContentPageState();
@@ -34,8 +39,7 @@ class _ContentPageState extends State<ContentPage> {
       }
 
       final lessonRequest = LessonContentRequest(
-        courseTitle:
-            "Current Course", // Ideally this should be passed from previous screens
+        courseTitle: widget.courseTitle,
         moduleTitle: widget.moduleData!.moduleTitle,
         lessonTitle: lesson.lessonTitle,
         lessonObjective: lesson.lessonSummary,
@@ -54,7 +58,11 @@ class _ContentPageState extends State<ContentPage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => LessonDetailPage(lessonData: lessonResponse),
+            builder: (context) => LessonDetailPage(
+              lessonData: lessonResponse,
+              courseTitle: widget.courseTitle,
+              moduleTitle: widget.moduleData!.moduleTitle,
+            ),
           ),
         );
       } catch (e) {
