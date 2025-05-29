@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:ai_tutor/services/api_service.dart';
 import 'package:ai_tutor/models/course_models.dart';
-import 'package:ai_tutor/content/content_preview_page.dart'; // Already present but good to confirm
+import 'package:ai_tutor/content/content_preview_page.dart';
 import '../widgets/app_header.dart';
 import '../widgets/bottom_nav_bar.dart';
-import '../widgets/animated_background.dart';
+import '../widgets/focus_aware_background.dart';
 
 class GeneratePage extends StatefulWidget {
   const GeneratePage({super.key});
@@ -122,7 +122,7 @@ class _GeneratePageState extends State<GeneratePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: AnimatedBackground(
+      body: FocusAwareBackground(
         primaryColor: Colors.blue.shade400,
         secondaryColor: Colors.blue.shade600,
         opacity: 0.03,
@@ -261,7 +261,8 @@ class _GeneratePageState extends State<GeneratePage> {
                           decoration: InputDecoration(
                             hintText: 'Enter your Topic...',
                             hintStyle: TextStyle(
-                              color: Colors.grey[400], // Adjusted for better visibility on grey[100]
+                              color: Colors.grey[
+                                  400], // Adjusted for better visibility on grey[100]
                               fontSize: 14,
                             ),
                             border: InputBorder.none,
@@ -315,46 +316,61 @@ class _GeneratePageState extends State<GeneratePage> {
                                 child: Material(
                                   color: Colors.transparent,
                                   child: InkWell(
-                                    onTap: _isLoading ? null : () async {
-                                      if (_topicController.text.isEmpty) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Please enter a topic')),
-                                        );
-                                        return;
-                                      }
+                                    onTap: _isLoading
+                                        ? null
+                                        : () async {
+                                            if (_topicController.text.isEmpty) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                    content: Text(
+                                                        'Please enter a topic')),
+                                              );
+                                              return;
+                                            }
 
-                                      setState(() {
-                                        _isLoading = true;
-                                      });
+                                            setState(() {
+                                              _isLoading = true;
+                                            });
 
-                                      final request = CourseRequest(
-                                        title: _topicController.text,
-                                        description: "A comprehensive course on ${_topicController.text}",
-                                        targetAudience: "Beginners",
-                                        timeAvailable: "1 week",
-                                        preferredFormat: "Text-based modules",
-                                        learningObjectives: [],
-                                      );
+                                            final request = CourseRequest(
+                                              title: _topicController.text,
+                                              description:
+                                                  "A comprehensive course on ${_topicController.text}",
+                                              targetAudience: "Beginners",
+                                              timeAvailable: "1 week",
+                                              preferredFormat:
+                                                  "Text-based modules",
+                                              learningObjectives: [],
+                                            );
 
-                                      try {
-                                        final courseResponse = await _apiService.planCourse(request);
-                                        // Navigate to ContentPreviewPage with courseResponse
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => ContentPreviewPage(courseData: courseResponse),
-                                          ),
-                                        );
-                                      } catch (e) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('Failed to plan course: $e')),
-                                        );
-                                      } finally {
-                                        setState(() {
-                                          _isLoading = false;
-                                        });
-                                      }
-                                    },
+                                            try {
+                                              final courseResponse =
+                                                  await _apiService
+                                                      .planCourse(request);
+                                              // Navigate to ContentPreviewPage with courseResponse
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      ContentPreviewPage(
+                                                          courseData:
+                                                              courseResponse),
+                                                ),
+                                              );
+                                            } catch (e) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                SnackBar(
+                                                    content: Text(
+                                                        'Failed to plan course: $e')),
+                                              );
+                                            } finally {
+                                              setState(() {
+                                                _isLoading = false;
+                                              });
+                                            }
+                                          },
                                     borderRadius: BorderRadius.circular(22),
                                     child: _isLoading
                                         ? const Center(
@@ -368,7 +384,8 @@ class _GeneratePageState extends State<GeneratePage> {
                                             ),
                                           )
                                         : Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
                                             children: [
                                               const Text(
                                                 'Generate Now',
@@ -380,7 +397,8 @@ class _GeneratePageState extends State<GeneratePage> {
                                               ),
                                               const SizedBox(width: 8),
                                               Container(
-                                                padding: const EdgeInsets.all(4),
+                                                padding:
+                                                    const EdgeInsets.all(4),
                                                 child: const Icon(
                                                   Icons.arrow_forward,
                                                   color: Colors.white,

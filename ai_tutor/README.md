@@ -6,7 +6,7 @@ An AI-powered Flutter app for creating and managing educational content.
 
 - Generate course content based on user-defined topics
 - Create detailed course modules with lessons
-- Interactive learning experience
+- Interactive learning experience with lesson content and quizzes
 - Customizable content generation
 
 ## API Endpoints
@@ -15,6 +15,7 @@ The app integrates with the following API endpoints:
 
 1. `/api/v1/plan-course` - Generate a complete course structure
 2. `/api/v1/plan-module` - Generate detailed content for a specific module
+3. `/api/v1/create-lesson-content` - Create detailed lesson content with quizzes
 
 ## Getting Started
 

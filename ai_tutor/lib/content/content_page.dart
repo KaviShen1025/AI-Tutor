@@ -1,13 +1,88 @@
 import 'package:flutter/material.dart';
 import 'package:ai_tutor/models/module_models.dart';
+import 'package:ai_tutor/models/lesson_models.dart';
+import 'package:ai_tutor/services/api_service.dart';
 import '../widgets/app_header.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/animated_background.dart';
+import 'lesson_detail_page.dart';
 
-class ContentPage extends StatelessWidget {
+class ContentPage extends StatefulWidget {
   final ModuleResponse? moduleData;
 
   const ContentPage({super.key, this.moduleData});
+
+  @override
+  State<ContentPage> createState() => _ContentPageState();
+}
+
+class _ContentPageState extends State<ContentPage> {
+  final ApiService _apiService = ApiService();
+  Map<String, bool> _loadingLessons = {};
+  Map<String, LessonContentResponse?> _lessonContents = {};
+
+  Future<void> _loadLessonContent(Lesson lesson) async {
+    if (_loadingLessons[lesson.lessonId] == true) return;
+
+    setState(() {
+      _loadingLessons[lesson.lessonId] = true;
+    });
+
+    try {
+      if (widget.moduleData == null) {
+        throw Exception('Module data is not available');
+      }
+
+      final lessonRequest = LessonContentRequest(
+        courseTitle:
+            "Current Course", // Ideally this should be passed from previous screens
+        moduleTitle: widget.moduleData!.moduleTitle,
+        lessonTitle: lesson.lessonTitle,
+        lessonObjective: lesson.lessonSummary,
+      );
+
+      try {
+        final lessonResponse =
+            await _apiService.createLessonContent(lessonRequest);
+
+        setState(() {
+          _lessonContents[lesson.lessonId] = lessonResponse;
+          _loadingLessons[lesson.lessonId] = false;
+        });
+
+        // Navigate to lesson detail page with the detailed content
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LessonDetailPage(lessonData: lessonResponse),
+          ),
+        );
+      } catch (e) {
+        setState(() {
+          _loadingLessons[lesson.lessonId] = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load lesson content: $e'),
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Retry',
+              onPressed: () => _loadLessonContent(lesson),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _loadingLessons[lesson.lessonId] = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +100,7 @@ class ContentPage extends StatelessWidget {
             children: [
               const AppHeader(),
               Expanded(
-                child: moduleData == null
+                child: widget.moduleData == null
                     ? const Center(child: Text('No module data available'))
                     : SingleChildScrollView(
                         child: Padding(
@@ -35,7 +110,7 @@ class ContentPage extends StatelessWidget {
                             children: [
                               // Module Title
                               Text(
-                                moduleData!.moduleTitle,
+                                widget.moduleData!.moduleTitle,
                                 style: const TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
@@ -48,7 +123,7 @@ class ContentPage extends StatelessWidget {
                                   const Icon(Icons.access_time, size: 16),
                                   const SizedBox(width: 4),
                                   Text(
-                                    'Estimated time: ${moduleData!.estimatedTime}',
+                                    'Estimated time: ${widget.moduleData!.estimatedTime}',
                                     style: const TextStyle(
                                       fontSize: 14,
                                       color: Colors.grey,
@@ -59,7 +134,7 @@ class ContentPage extends StatelessWidget {
                               const SizedBox(height: 16),
                               // Module Description
                               Text(
-                                moduleData!.moduleDescription,
+                                widget.moduleData!.moduleDescription,
                                 style: const TextStyle(
                                   fontSize: 16,
                                 ),
@@ -74,7 +149,7 @@ class ContentPage extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              ...moduleData!.learningObjectives
+                              ...widget.moduleData!.learningObjectives
                                   .map((objective) {
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 8.0),
@@ -102,37 +177,64 @@ class ContentPage extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              ...moduleData!.lessons.map((lesson) {
-                                return Container(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[50],
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.grey.withOpacity(0.2),
+                              ...widget.moduleData!.lessons.map((lesson) {
+                                final isLoading =
+                                    _loadingLessons[lesson.lessonId] ?? false;
+
+                                return GestureDetector(
+                                  onTap: () => _loadLessonContent(lesson),
+                                  child: Container(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[50],
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: Colors.grey.withOpacity(0.2),
+                                      ),
                                     ),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        lesson.lessonTitle,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                lesson.lessonTitle,
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                            if (isLoading)
+                                              const SizedBox(
+                                                width: 24,
+                                                height: 24,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                ),
+                                              )
+                                            else
+                                              const Icon(
+                                                Icons.arrow_forward_ios,
+                                                size: 16,
+                                                color: Colors.grey,
+                                              ),
+                                          ],
                                         ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        lesson.lessonSummary,
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.black87,
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          lesson.lessonSummary,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.black87,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 );
                               }).toList(),
