@@ -89,3 +89,57 @@ class LessonContentResponse {
     );
   }
 }
+
+// Add new class for quiz requests
+class QuizRequest {
+  final String courseTitle;
+  final String moduleTitle;
+  final String lessonTitle;
+  final String lessonObjective;
+
+  QuizRequest({
+    required this.courseTitle,
+    required this.moduleTitle,
+    required this.lessonTitle,
+    required this.lessonObjective,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'course_title': courseTitle,
+      'module_title': moduleTitle,
+      'lesson_title': lessonTitle,
+      'lesson_objective': lessonObjective,
+    };
+  }
+}
+
+// Add new class for quiz responses
+class QuizResponse {
+  final List<QuizQuestion> quiz;
+
+  QuizResponse({
+    required this.quiz,
+  });
+
+  factory QuizResponse.fromJson(Map<String, dynamic> json) {
+    List<QuizQuestion> quizQuestions = [];
+    if (json['quiz'] != null && json['quiz'] is List) {
+      quizQuestions = (json['quiz'] as List).map((questionJson) {
+        final options = List<String>.from(questionJson['options'] ?? []);
+        final correctAnswer = questionJson['correct_answer'] as String;
+        // Find the index of the correct answer in the options list
+        final correctOptionIndex = options.indexOf(correctAnswer);
+
+        return QuizQuestion(
+          question: questionJson['question'] ?? 'Question not available',
+          options: options,
+          correctOptionIndex: correctOptionIndex >= 0 ? correctOptionIndex : 0,
+          explanation: questionJson['explanation'],
+        );
+      }).toList();
+    }
+
+    return QuizResponse(quiz: quizQuestions);
+  }
+}

@@ -117,4 +117,51 @@ class ApiService {
       }
     }
   }
+
+  Future<QuizResponse> createQuiz(QuizRequest request) async {
+    final url = Uri.parse('$_baseUrl/create-quiz');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(request.toJson()),
+      );
+
+      if (response.statusCode == 200) {
+        // If the server returns a 200 OK response, parse the JSON
+        final responseBody = utf8.decode(response.bodyBytes);
+        if (responseBody.isEmpty) {
+          throw Exception('Server returned an empty response');
+        }
+
+        dynamic decodedJson;
+        try {
+          decodedJson = jsonDecode(responseBody);
+        } catch (e) {
+          throw Exception(
+              'Failed to decode JSON response: $e\nRaw response: $responseBody');
+        }
+
+        if (decodedJson == null) {
+          throw Exception('Decoded JSON is null');
+        }
+
+        return QuizResponse.fromJson(decodedJson);
+      } else {
+        // If the server did not return a 200 OK response, throw an exception
+        throw Exception(
+            'Failed to create quiz: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      // More detailed error handling
+      if (e is http.ClientException) {
+        throw Exception('Network error: ${e.message}');
+      } else {
+        throw Exception('Failed to connect to the server or other error: $e');
+      }
+    }
+  }
 }

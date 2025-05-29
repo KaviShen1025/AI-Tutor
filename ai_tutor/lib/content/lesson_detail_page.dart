@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ai_tutor/models/lesson_models.dart';
+import 'package:ai_tutor/services/api_service.dart';
 import '../widgets/app_header.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/animated_background.dart';
@@ -9,8 +10,9 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 
 class LessonDetailPage extends StatelessWidget {
   final LessonContentResponse lessonData;
+  final ApiService _apiService = ApiService();
 
-  const LessonDetailPage({Key? key, required this.lessonData})
+  LessonDetailPage({Key? key, required this.lessonData})
       : super(key: key);
 
   @override
@@ -38,10 +40,14 @@ class LessonDetailPage extends StatelessWidget {
                       children: [
                         // Lesson Title with decorative element
                         Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 16),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [Colors.blue.shade100, Colors.blue.shade50],
+                              colors: [
+                                Colors.blue.shade100,
+                                Colors.blue.shade50
+                              ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -74,7 +80,8 @@ class LessonDetailPage extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: Colors.blue.withOpacity(0.06),
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.blue.shade100, width: 1),
+                              border: Border.all(
+                                  color: Colors.blue.shade100, width: 1),
                             ),
                             child: MarkdownBody(
                               data: lessonData.lessonIntroduction ??
@@ -116,9 +123,12 @@ class LessonDetailPage extends StatelessWidget {
                               data: lessonData.lessonContent!,
                               styleSheet: MarkdownStyleSheet(
                                 p: const TextStyle(fontSize: 16, height: 1.6),
-                                h1: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                                h2: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                                h3: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                h1: const TextStyle(
+                                    fontSize: 22, fontWeight: FontWeight.bold),
+                                h2: const TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.bold),
+                                h3: const TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
                                 blockquote: const TextStyle(
                                   fontStyle: FontStyle.italic,
                                   color: Colors.grey,
@@ -148,15 +158,18 @@ class LessonDetailPage extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: Colors.green.withOpacity(0.05),
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.green.shade100, width: 1),
+                              border: Border.all(
+                                  color: Colors.green.shade100, width: 1),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: lessonData.keyTakeaways!.map((takeaway) {
+                              children:
+                                  lessonData.keyTakeaways!.map((takeaway) {
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 12.0),
                                   child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Container(
                                         padding: const EdgeInsets.all(4),
@@ -201,15 +214,18 @@ class LessonDetailPage extends StatelessWidget {
                                     ),
                                   );
                                 },
-                                icon: const Icon(Icons.question_answer_outlined),
+                                icon:
+                                    const Icon(Icons.question_answer_outlined),
                                 label: const Text('Ask Question'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
                                   foregroundColor: Colors.blue.shade700,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
-                                    side: BorderSide(color: Colors.blue.shade200),
+                                    side:
+                                        BorderSide(color: Colors.blue.shade200),
                                   ),
                                   elevation: 0,
                                 ),
@@ -218,23 +234,77 @@ class LessonDetailPage extends StatelessWidget {
                             const SizedBox(width: 16),
                             Expanded(
                               child: ElevatedButton.icon(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => QuizPage(
-                                        section: lessonData.lessonTitle,
-                                        quizQuestions: lessonData.quizQuestions,
-                                      ),
+                                onPressed: () async {
+                                  // Show loading indicator
+                                  final scaffoldMessenger =
+                                      ScaffoldMessenger.of(context);
+
+                                  scaffoldMessenger.showSnackBar(
+                                    const SnackBar(
+                                      content:
+                                          Text('Generating quiz questions...'),
+                                      duration: Duration(seconds: 2),
                                     ),
                                   );
+
+                                  try {
+                                    // If we already have quiz questions, use them
+                                    if (lessonData.quizQuestions != null &&
+                                        lessonData.quizQuestions!.isNotEmpty) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => QuizPage(
+                                            section: lessonData.lessonTitle,
+                                            quizQuestions:
+                                                lessonData.quizQuestions,
+                                          ),
+                                        ),
+                                      );
+                                    } else {
+                                      // Otherwise, generate new quiz questions from API
+                                      final quizRequest = QuizRequest(
+                                        courseTitle:
+                                            "Current Course", // This should ideally be passed from previous screens
+                                        moduleTitle:
+                                            "Current Module", // This should ideally be passed from previous screens
+                                        lessonTitle: lessonData.lessonTitle,
+                                        lessonObjective: lessonData
+                                                .lessonIntroduction ??
+                                            "Learn about ${lessonData.lessonTitle}",
+                                      );
+
+                                      final quizResponse = await _apiService
+                                          .createQuiz(quizRequest);
+
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => QuizPage(
+                                            section: lessonData.lessonTitle,
+                                            quizQuestions: quizResponse.quiz,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    scaffoldMessenger.hideCurrentSnackBar();
+                                    scaffoldMessenger.showSnackBar(
+                                      SnackBar(
+                                        content:
+                                            Text('Failed to generate quiz: $e'),
+                                        duration: const Duration(seconds: 5),
+                                      ),
+                                    );
+                                  }
                                 },
                                 icon: const Icon(Icons.quiz_outlined),
                                 label: const Text('Take Quiz'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.blue.shade600,
                                   foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
                                   ),
