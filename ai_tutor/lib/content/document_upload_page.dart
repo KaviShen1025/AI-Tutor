@@ -6,6 +6,7 @@ import 'package:ai_tutor/models/document_models.dart';
 import 'package:ai_tutor/content/content_preview_page.dart';
 import '../widgets/app_header.dart';
 import '../widgets/bottom_nav_bar.dart';
+import '../widgets/focus_aware_background.dart'; // Add this import
 
 class DocumentUploadPage extends StatefulWidget {
   const DocumentUploadPage({super.key});
@@ -159,189 +160,197 @@ class _DocumentUploadPageState extends State<DocumentUploadPage> {
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Upload a document to generate a course',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
+      body: FocusAwareBackground(
+        // Add FocusAwareBackground
+        primaryColor: Colors.blue.shade400,
+        secondaryColor: Colors.blue.shade600,
+        opacity: 0.03,
+        enableWaves: true,
+        enableParticles: true,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Upload a document to generate a course',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                // Document upload section
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        _selectedFile != null
-                            ? Icons.description
-                            : Icons.cloud_upload_outlined,
-                        size: 60,
-                        color: Colors.blue,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _selectedFile != null
-                            ? 'Selected: ${_selectedFile!.name}'
-                            : 'Click to select a document',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
+                  // Document upload section
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          _selectedFile != null
+                              ? Icons.description
+                              : Icons.cloud_upload_outlined,
+                          size: 60,
+                          color: Colors.blue,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _isUploading ? null : _pickFile,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 12),
+                        const SizedBox(height: 16),
+                        Text(
+                          _selectedFile != null
+                              ? 'Selected: ${_selectedFile!.name}'
+                              : 'Click to select a document',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        child: const Text('Select File'),
-                      ),
-                      if (_selectedFile != null) ...[
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 16),
                         ElevatedButton(
-                          onPressed: _isUploading ? null : _uploadFile,
+                          onPressed: _isUploading ? null : _pickFile,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
+                            backgroundColor: Colors.blue,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 24, vertical: 12),
                           ),
-                          child: _isUploading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text('Upload Document'),
+                          child: const Text('Select File'),
                         ),
-                      ],
-                    ],
-                  ),
-                ),
-
-                if (_uploadedDocumentId != null) ...[
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Course Generation Options',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Course title field
-                  TextField(
-                    controller: _titleController,
-                    decoration: InputDecoration(
-                      labelText: 'Course Title (optional)',
-                      hintText: 'Leave blank for auto-generated title',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Additional context field
-                  TextField(
-                    controller: _contextController,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      labelText: 'Additional Context',
-                      hintText: 'E.g., Focus on practical applications',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Complexity level dropdown
-                  DropdownButtonFormField<String>(
-                    value: _selectedComplexity,
-                    decoration: InputDecoration(
-                      labelText: 'Complexity Level',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                    ),
-                    items: _complexityLevels.map((String level) {
-                      // Capitalize first letter for display
-                      String displayText =
-                          level[0].toUpperCase() + level.substring(1);
-                      return DropdownMenuItem<String>(
-                        value: level,
-                        child: Text(displayText),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      if (newValue != null) {
-                        setState(() {
-                          _selectedComplexity = newValue;
-                        });
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Generate course button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isGeneratingCourse
-                          ? null
-                          : _generateCourseFromDocument,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: _isGeneratingCourse
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Text(
-                              'Generate Course',
-                              style: TextStyle(fontSize: 16),
+                        if (_selectedFile != null) ...[
+                          const SizedBox(height: 12),
+                          ElevatedButton(
+                            onPressed: _isUploading ? null : _uploadFile,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 12),
                             ),
+                            child: _isUploading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text('Upload Document'),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
+
+                  if (_uploadedDocumentId != null) ...[
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Course Generation Options',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Course title field
+                    TextField(
+                      controller: _titleController,
+                      decoration: InputDecoration(
+                        labelText: 'Course Title (optional)',
+                        hintText: 'Leave blank for auto-generated title',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Additional context field
+                    TextField(
+                      controller: _contextController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: 'Additional Context',
+                        hintText: 'E.g., Focus on practical applications',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Complexity level dropdown
+                    DropdownButtonFormField<String>(
+                      value: _selectedComplexity,
+                      decoration: InputDecoration(
+                        labelText: 'Complexity Level',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                      ),
+                      items: _complexityLevels.map((String level) {
+                        // Capitalize first letter for display
+                        String displayText =
+                            level[0].toUpperCase() + level.substring(1);
+                        return DropdownMenuItem<String>(
+                          value: level,
+                          child: Text(displayText),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            _selectedComplexity = newValue;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Generate course button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isGeneratingCourse
+                            ? null
+                            : _generateCourseFromDocument,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: _isGeneratingCourse
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                'Generate Course',
+                                style: TextStyle(fontSize: 16),
+                              ),
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),
