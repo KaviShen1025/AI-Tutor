@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ai_tutor/services/api_service.dart';
 import 'package:ai_tutor/models/course_models.dart';
 import 'package:ai_tutor/content/content_preview_page.dart';
+import 'package:ai_tutor/content/document_upload_page.dart';
 import '../widgets/app_header.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/focus_aware_background.dart';
@@ -54,10 +55,35 @@ class _GeneratePageState extends State<GeneratePage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildMenuItem('Upload Document', Icons.description_outlined),
-              _buildMenuItem('Upload Presentation', Icons.slideshow_outlined),
-              _buildMenuItem('Upload Image', Icons.image_outlined),
-              _buildMenuItem('Take an Image', Icons.photo_camera_outlined),
+              _buildMenuItem('Upload Document', Icons.description_outlined, () {
+                Navigator.pop(context);
+                // Use pushReplacement to avoid stacking screens
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const DocumentUploadPage()),
+                );
+              }),
+              _buildMenuItem('Upload Presentation', Icons.slideshow_outlined,
+                  () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Presentation upload coming soon')),
+                );
+              }),
+              _buildMenuItem('Upload Image', Icons.image_outlined, () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Image upload coming soon')),
+                );
+              }),
+              _buildMenuItem('Take an Image', Icons.photo_camera_outlined, () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Camera feature coming soon')),
+                );
+              }),
             ],
           ),
         );
@@ -65,7 +91,8 @@ class _GeneratePageState extends State<GeneratePage> {
     );
   }
 
-  Widget _buildMenuItem(String text, IconData icon) {
+  Widget _buildMenuItem(String text, IconData icon,
+      [Function()? onTapOverride]) {
     final isSelected = _selectedOption == text;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -108,12 +135,13 @@ class _GeneratePageState extends State<GeneratePage> {
                 size: 20,
               )
             : null,
-        onTap: () {
-          setState(() {
-            _selectedOption = text;
-          });
-          Navigator.pop(context);
-        },
+        onTap: onTapOverride ??
+            () {
+              setState(() {
+                _selectedOption = text;
+              });
+              Navigator.pop(context);
+            },
       ),
     );
   }
